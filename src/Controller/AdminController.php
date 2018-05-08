@@ -20,6 +20,7 @@ use App\Entity\Reservation;
 use App\Entity\Typebien;
 use App\Entity\Contrat;
 use App\Entity\Paiement;
+use App\Entity\Agent;
 
 class AdminController extends Controller
 {
@@ -88,12 +89,9 @@ class AdminController extends Controller
     {
         $repository = $this->getDoctrine()->getRepository(Reservation::class);       
         $reserve = $repository->find($id);  
-$repository = $this->getDoctrine()->getRepository(Bien::class);       
-        $bien = $repository->find($id);     
-      
-           
-          
-        foreach($bien->getImages() as $key=>$images){
+        $repository = $this->getDoctrine()->getRepository(Bien::class);       
+        $bien = $repository->find($id);  
+            foreach($bien->getImages() as $key=>$images){
             $images->setImage(base64_encode(stream_get_contents($images->getImage())));
         }
         
@@ -137,9 +135,6 @@ $repository = $this->getDoctrine()->getRepository(Bien::class);
 
         
         $repository = $this->getDoctrine()->getRepository(Bien::class)->find($idbien); 
-
-       
-        //    $total=$request->get('prix_loc');
         
         $data = $request->getContent();
         $contrats = $this->get('jms_serializer')
@@ -184,6 +179,47 @@ $repository = $this->getDoctrine()->getRepository(Bien::class);
         $em->persist($reserve);
         $em->flush();
         }
+         /**
+     * connection
+     * @FOSRest\Post("/connection/{id}" ,name="connection")
+     *
+     * @return array
+     */
+        public function connection(Request $request,$id){
+
+            $idagent = $request->get('id');
+           
+            $em = $this->getDoctrine()->getManager();
+            $data = $request->getContent();
+            $agent = $this->get('jms_serializer')
+            ->deserialize($data, 'App\Entity\Agent','json'); 
+            // $agent = $request->get('login');
+            // $agent = $request->get('password');
+            $agent = $em->getRepository(Agent::class)->findBy(array('login' => $agent->getLogin('login'), 'password' => $agent->getPassword('password')));
+            if(empty($agent))
+                {       
+
+             $data = $this->get('jms_serializer')->serialize($agent, 'json'); 
+
+            $response =array(
+                "code"=>true,
+                "msg"=>"info sur l'agent",
+                "error"=>null,
+                "data"=>json_decode($data)
+            );
+            return new JsonResponse($response,Response::HTTP_OK  );
         
+    
+                }
+                $response = array(
+                    'code' => 0,
+                    'Message' => 'error',
+                    'error' => null,
+                    'type' => null,
+                );
+                return new JsonResponse($response, Response::HTTP_BAD_REQUEST);
+
+        }
+
     }
 
